@@ -13,40 +13,19 @@ func getAltIndex[T fingerprintsize](fp T, i uint, bucketIndexMask uint) uint {
 	return (i ^ hash) & bucketIndexMask
 }
 
-func getFingerprintUint8(hash uint64) uint8 {
-	const fingerprintSizeBits = 8
-	const maxFingerprint = (1 << fingerprintSizeBits) - 1
+func getFingerprint[T fingerprintsize](hash uint64, fingerprintSizeBits uint64) T {
+	maxFingerprint := uint64((1 << fingerprintSizeBits) - 1)
 	// Use most significant bits for fingerprint.
 	shifted := hash >> (64 - fingerprintSizeBits)
 	// Valid fingerprints are in range [1, maxFingerprint], leaving 0 as the special empty state.
 	fp := shifted%(maxFingerprint-1) + 1
-	return uint8(fp)
-}
-
-func getFingerprintUint16(hash uint64) uint16 {
-	const fingerprintSizeBits = 16
-	const maxFingerprint = (1 << fingerprintSizeBits) - 1
-	// Use most significant bits for fingerprint.
-	shifted := hash >> (64 - fingerprintSizeBits)
-	// Valid fingerprints are in range [1, maxFingerprint], leaving 0 as the special empty state.
-	fp := shifted%(maxFingerprint-1) + 1
-	return uint16(fp)
-}
-
-func getFingerprintUint32(hash uint64) uint32 {
-	const fingerprintSizeBits = 32
-	const maxFingerprint = (1 << fingerprintSizeBits) - 1
-	// Use most significant bits for fingerprint.
-	shifted := hash >> (64 - fingerprintSizeBits)
-	// Valid fingerprints are in range [1, maxFingerprint], leaving 0 as the special empty state.
-	fp := shifted%(maxFingerprint-1) + 1
-	return uint32(fp)
+	return T(fp)
 }
 
 // getIndexAndFingerprint returns the primary bucket index and fingerprint to be used
-func getIndexAndFingerprint[T fingerprintsize](data []byte, bucketIndexMask uint, getFingerprint func(uint64) T) (uint, T) {
+func getIndexAndFingerprint[T fingerprintsize](data []byte, bucketIndexMask uint, fingerprintSize uint64) (uint, T) {
 	hash := metro.Hash64(data, 1337)
-	f := getFingerprint(hash)
+	f := getFingerprint[T](hash, fingerprintSize)
 	// Use least significant bits for deriving index.
 	i1 := uint(hash) & bucketIndexMask
 	return i1, f

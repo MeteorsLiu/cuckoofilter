@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 // optFloatNear considers float64 as equal if the relative delta is small.
@@ -129,7 +128,7 @@ func BenchmarkFilter_Reset(b *testing.B) {
 }
 
 // benchmarKeys returns a slice of keys for benchmarking with length `size`.
-func benchmarKeys(b *testing.B, size int ) [][]byte {
+func benchmarKeys(b *testing.B, size int) [][]byte {
 	b.Helper()
 	keys := make([][]byte, size)
 	for i := range keys {
@@ -143,7 +142,7 @@ func benchmarKeys(b *testing.B, size int ) [][]byte {
 
 func BenchmarkFilter_Insert(b *testing.B) {
 	const size = 10000
-	keys := benchmarKeys(b, int(float64(size)* 0.8))
+	keys := benchmarKeys(b, int(float64(size)*0.8))
 	b.ResetTimer()
 
 	for i := 0; i < b.N; {
@@ -164,7 +163,7 @@ func BenchmarkFilter_Lookup(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; {
 		for _, k := range keys {
-		    filter.Lookup(k)
+			filter.Lookup(k)
 			i++
 		}
 	}
@@ -242,8 +241,7 @@ func TestEncodeDecode(t *testing.T) {
 		t.Errorf("Expected no error, got %v", err)
 	}
 	if !cmp.Equal(cf, got,
-		cmp.AllowUnexported(filter[uint16]{}),
-		cmpopts.IgnoreFields(filter[uint16]{}, "getFingerprint")) {
+		cmp.AllowUnexported(filter[uint16]{})) {
 		t.Errorf("Decode = %v, want %v, encoded = %v", got, cf, encoded)
 	}
 }

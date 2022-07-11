@@ -34,9 +34,9 @@ type Filter interface {
 }
 
 type filter[T fingerprintsize] struct {
-	buckets        []bucket[T]
-	getFingerprint func(hash uint64) T
-	count          uint
+	buckets             []bucket[T]
+	fingerprintSizeBits uint64
+	count               uint
 	// Bit mask set to len(buckets) - 1. As len(buckets) is always a power of 2,
 	// applying this mask mimics the operation x % len(buckets).
 	bucketIndexMask uint
@@ -63,32 +63,32 @@ func NewFilter(cfg Config) Filter {
 	case Low:
 		buckets := make([]bucket[uint8], numBuckets)
 		return &filter[uint8]{
-			buckets:         buckets,
-			count:           0,
-			bucketIndexMask: uint(len(buckets) - 1),
-			getFingerprint:  getFingerprintUint8,
+			buckets:             buckets,
+			count:               0,
+			bucketIndexMask:     uint(len(buckets) - 1),
+			fingerprintSizeBits: 8,
 		}
 	case High:
 		buckets := make([]bucket[uint32], numBuckets)
 		return &filter[uint32]{
-			buckets:         buckets,
-			count:           0,
-			bucketIndexMask: uint(len(buckets) - 1),
-			getFingerprint:  getFingerprintUint32,
+			buckets:             buckets,
+			count:               0,
+			bucketIndexMask:     uint(len(buckets) - 1),
+			fingerprintSizeBits: 32,
 		}
 	default:
 		buckets := make([]bucket[uint16], numBuckets)
 		return &filter[uint16]{
-			buckets:         buckets,
-			count:           0,
-			bucketIndexMask: uint(len(buckets) - 1),
-			getFingerprint:  getFingerprintUint16,
+			buckets:             buckets,
+			count:               0,
+			bucketIndexMask:     uint(len(buckets) - 1),
+			fingerprintSizeBits: 16,
 		}
 	}
 }
 
 func (cf *filter[T]) Lookup(data []byte) bool {
-	i1, fp := getIndexAndFingerprint(data, cf.bucketIndexMask, cf.getFingerprint)
+	i1, fp := getIndexAndFingerprint[T](data, cf.bucketIndexMask, cf.fingerprintSizeBits)
 	if b := cf.buckets[i1]; b.contains(fp) {
 		return true
 	}
@@ -105,7 +105,7 @@ func (cf *filter[T]) Reset() {
 }
 
 func (cf *filter[T]) Insert(data []byte) bool {
-	i, fp := getIndexAndFingerprint(data, cf.bucketIndexMask, cf.getFingerprint)
+	i, fp := getIndexAndFingerprint[T](data, cf.bucketIndexMask, cf.fingerprintSizeBits)
 	if cf.insertIntoBucket(fp, i) {
 		return true
 	}
@@ -133,9 +133,8 @@ func (cf *filter[T]) insertIntoBucket(fp T, i uint) bool {
 	return false
 }
 
-
 func (cf *filter[T]) Delete(data []byte) bool {
-	i1, fp := getIndexAndFingerprint(data, cf.bucketIndexMask, cf.getFingerprint)
+	i1, fp := getIndexAndFingerprint[T](data, cf.bucketIndexMask, cf.fingerprintSizeBits)
 	i2 := getAltIndex(fp, i1, cf.bucketIndexMask)
 	return cf.delete(fp, i1) || cf.delete(fp, i2)
 }
@@ -197,9 +196,9 @@ func Decode(bytes []byte) (Filter, error) {
 		}
 	}
 	return &filter[uint16]{
-		buckets:         buckets,
-		count:           count,
-		bucketIndexMask: uint(len(buckets) - 1),
-		getFingerprint:  getFingerprintUint16,
+		buckets:             buckets,
+		count:               count,
+		bucketIndexMask:     uint(len(buckets) - 1),
+		fingerprintSizeBits: 16,
 	}, nil
 }
