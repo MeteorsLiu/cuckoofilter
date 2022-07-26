@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"math/rand"
 
-	metro "github.com/dgryski/go-metro"
+	"github.com/zeebo/xxh3"
 )
 
 // randi returns either i1 or i2 randomly.
@@ -18,7 +18,7 @@ func randi(i1, i2 uint) uint {
 func getAltIndex(fp fingerprint, i uint, bucketIndexMask uint) uint {
 	b := make([]byte, 2)
 	binary.LittleEndian.PutUint16(b, uint16(fp))
-	hash := uint(metro.Hash64(b, 1337))
+	hash := uint(xxh3.Hash(b))
 	return (i ^ hash) & bucketIndexMask
 }
 
@@ -32,7 +32,7 @@ func getFingerprint(hash uint64) fingerprint {
 
 // getIndexAndFingerprint returns the primary bucket index and fingerprint to be used
 func getIndexAndFingerprint(data []byte, bucketIndexMask uint) (uint, fingerprint) {
-	hash := metro.Hash64(data, 1337)
+	hash := xxh3.Hash(data)
 	f := getFingerprint(hash)
 	// Use least significant bits for deriving index.
 	i1 := uint(hash) & bucketIndexMask
