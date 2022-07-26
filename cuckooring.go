@@ -11,7 +11,7 @@ type CuckooRing struct {
 	mutex        sync.RWMutex
 }
 
-func NewCuckooRing(slot, capacity uint, falsePositiveRate float64) *CuckooRing {
+func NewCuckooRing(slot, capacity uint) *CuckooRing {
 	r := &CuckooRing{
 		slotCapacity: capacity / slot,
 		slotCount:    slot,
