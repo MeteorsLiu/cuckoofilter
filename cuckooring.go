@@ -48,27 +48,16 @@ func (r *CuckooRing) Test(b []byte) bool {
 	if r == nil {
 		return false
 	}
-	doneCh := make(chan bool, r.slotCount)
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	test := r.test(b)
+	return test
+}
+
+func (r *CuckooRing) test(b []byte) bool {
 	for _, s := range r.slots {
-		go func() {
-			r.mutex.RLock()
-			defer r.mutex.RUnlock()
-			select {
-			case doneCh <- s.Lookup(b):
-			default:
-			}
-		}()
-	}
-	for {
-		select {
-		case ret := <-doneCh:
-			if ret {
-				return true
-			}
-		default:
-			if len(doneCh) == 0 {
-				break
-			}
+		if s.Lookup(b) {
+			return true
 		}
 	}
 	return false
