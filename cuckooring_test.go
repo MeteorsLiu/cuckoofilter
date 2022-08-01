@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkCuckooRing(b *testing.B) {
-	ring := NewCuckooRing(uint(1), uint(1e6))
+	ring := NewCuckooRing(uint(2), uint(1e6))
 
 	keys := benchmarkKeys(b, 1e6)
 	for _, k := range keys {
