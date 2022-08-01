@@ -8,9 +8,9 @@ import (
 )
 
 func BenchmarkCuckooRing(b *testing.B) {
-	ring := NewCuckooRing(uint(2), uint(1e6))
+	ring := NewCuckooRing(uint(2), uint(2e6))
 
-	keys := benchmarkKeys(b, 1e6)
+	keys := benchmarkKeys(b, 1500000)
 	for _, k := range keys {
 		ring.Add(k)
 
@@ -25,9 +25,9 @@ func BenchmarkCuckooRing(b *testing.B) {
 }
 
 func BenchmarkCuckooRing1(b *testing.B) {
-	ring := NewCuckooRing1(uint(1e6))
+	ring := NewCuckooRing1(uint(2e6))
 
-	keys := benchmarkKeys(b, 1e6)
+	keys := benchmarkKeys(b, 1500000)
 	for _, k := range keys {
 		ring.Add(k)
 	}
@@ -40,8 +40,8 @@ func BenchmarkCuckooRing1(b *testing.B) {
 	}
 }
 func BenchmarkCuckooFilter(b *testing.B) {
-	filter := NewFilter(1e6)
-	keys := benchmarkKeys(b, 1e6)
+	filter := NewFilter(2e6)
+	keys := benchmarkKeys(b, 1500000)
 	for _, k := range keys {
 		filter.Insert(k)
 
