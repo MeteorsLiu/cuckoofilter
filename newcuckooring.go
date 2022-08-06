@@ -22,14 +22,14 @@ func NewCuckooRing1(capacity uint) *CuckooRing_ {
 
 func (c *CuckooRing_) Add(b []byte) {
 	slot := c.pool[c.slotPosition]
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	if slot.Count() > c.slotCapacity {
 		// Move to next slot and reset
 		c.slotPosition = (c.slotPosition + 1) % 2
 		slot = c.pool[c.slotPosition]
 		slot.Reset()
 	}
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
 	slot.Insert(b)
 }
 
