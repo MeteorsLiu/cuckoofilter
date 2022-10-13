@@ -3,17 +3,9 @@ package cuckoo
 import (
 	"encoding/binary"
 	"math/rand"
-	"sync"
 
 	"github.com/zeebo/xxh3"
 )
-
-var bufPool = sync.Pool{
-	New: func() any {
-		b := make([]byte, 2)
-		return &b
-	},
-}
 
 // randi returns either i1 or i2 randomly.
 func randi(i1, i2 uint) uint {
@@ -24,8 +16,7 @@ func randi(i1, i2 uint) uint {
 }
 
 func getAltIndex(fp fingerprint, i uint, bucketIndexMask uint) uint {
-	b := *(bufPool.Get().(*[]byte))
-	defer bufPool.Put(&b)
+	b := make([]byte, 2)
 	binary.LittleEndian.PutUint16(b, uint16(fp))
 	hash := uint(xxh3.Hash(b))
 	return (i ^ hash) & bucketIndexMask
