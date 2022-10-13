@@ -3,7 +3,7 @@ package cuckoo
 import "sync"
 
 type CuckooRing_ struct {
-	pool         []Filter
+	pool         []*Filter
 	slotPosition int
 	slotCapacity uint
 	mutex        sync.RWMutex
@@ -11,11 +11,11 @@ type CuckooRing_ struct {
 
 func NewCuckooRing1(capacity uint) *CuckooRing_ {
 	ring := &CuckooRing_{
-		pool: make([]Filter, 2),
+		pool: make([]*Filter, 2),
 	}
 	ring.slotCapacity = capacity / 2
 	for i := 0; i < 2; i++ {
-		ring.pool[i] = *NewFilter(ring.slotCapacity)
+		ring.pool[i] = NewFilter(ring.slotCapacity)
 	}
 	return ring
 }
