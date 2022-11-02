@@ -2,14 +2,16 @@ package cuckoo
 
 import (
 	"encoding/binary"
-	"math/rand"
 
-	"github.com/zeebo/xxh3"
+	"github.com/zeebo/wyhash"
 )
+
+var rng wyhash.SRNG
 
 // randi returns either i1 or i2 randomly.
 func randi(i1, i2 uint) uint {
-	if rand.Int31()%2 == 0 {
+	// it's faster than mod, but the result is almost same.
+	if uint32(uint64(uint32(rng.Uint64()))*uint64(2)>>32) == 0 {
 		return i1
 	}
 	return i2
@@ -18,7 +20,7 @@ func randi(i1, i2 uint) uint {
 func getAltIndex(fp fingerprint, i uint, bucketIndexMask uint) uint {
 	b := make([]byte, 2)
 	binary.LittleEndian.PutUint16(b, uint16(fp))
-	hash := uint(xxh3.Hash(b))
+	hash := uint(wyhash.Hash(b, 1337))
 	return (i ^ hash) & bucketIndexMask
 }
 
@@ -32,7 +34,7 @@ func getFingerprint(hash uint64) fingerprint {
 
 // getIndexAndFingerprint returns the primary bucket index and fingerprint to be used
 func getIndexAndFingerprint(data []byte, bucketIndexMask uint) (uint, fingerprint) {
-	hash := xxh3.Hash(data)
+	hash := wyhash.Hash(data, 1337)
 	f := getFingerprint(hash)
 	// Use least significant bits for deriving index.
 	i1 := uint(hash) & bucketIndexMask
