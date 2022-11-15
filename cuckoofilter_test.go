@@ -119,17 +119,6 @@ func TestFilter_Insert(t *testing.T) {
 	}
 }
 
-func BenchmarkFilter_Reset(b *testing.B) {
-	const cap = 10000
-	filter := NewFilter(cap)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		filter.Reset()
-	}
-}
-
 // benchmarkKeys returns a slice of keys for benchmarking with length `size`.
 func benchmarkKeys(b *testing.B, size int) [][]byte {
 	b.Helper()
