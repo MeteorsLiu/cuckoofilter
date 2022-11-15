@@ -3,7 +3,6 @@ package cuckoo
 import (
 	"encoding/binary"
 	"fmt"
-	"math/bits"
 	"math/rand"
 )
 
@@ -36,7 +35,7 @@ func NewFilter(numElements uint) *Filter {
 	return &Filter{
 		buckets:         buckets,
 		count:           0,
-		bucketIndexMask: uint(bits.TrailingZeros(numBuckets)),
+		bucketIndexMask: uint(len(buckets) - 1),
 	}
 }
 
