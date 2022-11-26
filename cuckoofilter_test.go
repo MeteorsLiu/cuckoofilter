@@ -2,10 +2,9 @@ package cuckoo
 
 import (
 	"bufio"
-	"crypto/rand"
 	"fmt"
-	"io"
 	"math"
+	"math/rand"
 	"os"
 	"testing"
 
