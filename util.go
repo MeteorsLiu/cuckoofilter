@@ -34,10 +34,8 @@ func init() {
 	}
 }
 
-func getAltIndex(fp fingerprint, i uint, bucketPow uint) uint {
-	mask := masks[bucketPow]
-	hash := altHash[fp] & mask
-	return (i & mask) ^ hash
+func getAltIndex(fp fingerprint, i uint, bucketIndexMask uint) uint {
+	return (i ^ altHash[fp]) & bucketIndexMask
 }
 
 func getFingerprint(hash uint64) fingerprint {
