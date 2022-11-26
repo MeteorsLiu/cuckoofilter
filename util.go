@@ -2,15 +2,15 @@ package cuckoo
 
 import (
 	"encoding/binary"
+	"unsafe"
 
 	"github.com/zeebo/wyhash"
 	"github.com/zeebo/xxh3"
 )
 
 var (
-	altHash = [maxFingerprint]uint{}
-
-	rng wyhash.SRNG
+	altHash [maxFingerprint]uint
+	rng     wyhash.SRNG
 )
 
 // randi returns either i1 or i2 randomly.
@@ -21,11 +21,20 @@ func randi(i1, i2 uint) uint {
 	}
 	return i2
 }
-
+func getEndian() (endian binary.ByteOrder) {
+	var i int = 0x1
+	bs := (*[int(unsafe.Sizeof(0))]byte)(unsafe.Pointer(&i))
+	if bs[0] == 0 {
+		return binary.BigEndian
+	} else {
+		return binary.LittleEndian
+	}
+}
 func init() {
 	b := make([]byte, 2)
+	endian := getEndian()
 	for i := 0; i < maxFingerprint; i++ {
-		binary.LittleEndian.PutUint16(b, uint16(i))
+		endian.PutUint16(b, uint16(i))
 		altHash[i] = (uint(xxh3.Hash(b)))
 	}
 }
