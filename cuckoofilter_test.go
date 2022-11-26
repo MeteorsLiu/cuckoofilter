@@ -123,55 +123,95 @@ func TestFilter_Insert(t *testing.T) {
 func benchmarkKeys(b *testing.B, size int) [][]byte {
 	b.Helper()
 	keys := make([][]byte, size)
+	rng := rand.New(rand.NewSource(int64(size)))
 	for i := range keys {
 		keys[i] = make([]byte, 32)
-		if _, err := io.ReadFull(rand.Reader, keys[i]); err != nil {
+		if _, err := rng.Read(keys[i]); err != nil {
 			b.Error(err)
 		}
 	}
 	return keys
 }
 
-func BenchmarkFilter_Reset(b *testing.B) {
-	const cap = 10000
-	filter := NewFilter(cap)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		filter.Reset()
-	}
-}
-
 func BenchmarkFilter_Insert(b *testing.B) {
-	const cap = 10000
-	filter := NewFilter(cap)
-
+	const size = 10000
+	keys := benchmarkKeys(b, int(float64(size)*0.8))
 	b.ResetTimer()
 
-	var hash [32]byte
-	for i := 0; i < b.N; i++ {
-		io.ReadFull(rand.Reader, hash[:])
-		filter.Insert(hash[:])
+	for i := 0; i < b.N; {
+		b.StopTimer()
+		filter := NewFilter(size)
+		b.StartTimer()
+		for _, k := range keys {
+			filter.Insert(k)
+			i++
+		}
 	}
 }
 
 func BenchmarkFilter_Lookup(b *testing.B) {
-	const cap = 10000
-	filter := NewFilter(cap)
-
-	var hash [32]byte
-	for i := 0; i < 10000; i++ {
-		io.ReadFull(rand.Reader, hash[:])
-		filter.Insert(hash[:])
+	f := NewFilter(10000)
+	keys := benchmarkKeys(b, 10000)
+	for _, k := range keys {
+		f.Insert(k)
 	}
+	// One half is likely missing, other half is present.
+	lookupKeys := append(benchmarkKeys(b, 1000), keys[0:1000]...)
+	rand.New(rand.NewSource(42)).Shuffle(2000, func(i, j int) {
+		lookupKeys[i] = lookupKeys[j]
+	})
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		io.ReadFull(rand.Reader, hash[:])
-		filter.Lookup(hash[:])
+	for i := 0; i < b.N; {
+		for _, k := range lookupKeys {
+			f.Lookup(k)
+			i++
+		}
 	}
 }
+
+/*
+	func BenchmarkFilter_Reset(b *testing.B) {
+		const cap = 10000
+		filter := NewFilter(cap)
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			filter.Reset()
+		}
+	}
+
+	func BenchmarkFilter_Insert(b *testing.B) {
+		const cap = 10000
+		filter := NewFilter(cap)
+
+		b.ResetTimer()
+
+		var hash [32]byte
+		for i := 0; i < b.N; i++ {
+			io.ReadFull(rand.Reader, hash[:])
+			filter.Insert(hash[:])
+		}
+	}
+
+	func BenchmarkFilter_Lookup(b *testing.B) {
+		const cap = 10000
+		filter := NewFilter(cap)
+
+		var hash [32]byte
+		for i := 0; i < 10000; i++ {
+			io.ReadFull(rand.Reader, hash[:])
+			filter.Insert(hash[:])
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			io.ReadFull(rand.Reader, hash[:])
+			filter.Lookup(hash[:])
+		}
+	}
+*/
 func TestDelete(t *testing.T) {
 	cf := NewFilter(8)
 	cf.Insert([]byte("one"))
