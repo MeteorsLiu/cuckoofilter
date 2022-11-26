@@ -3,6 +3,7 @@ package cuckoo
 import (
 	"encoding/binary"
 	"fmt"
+	"math/bits"
 	"math/rand"
 )
 
@@ -23,19 +24,16 @@ type Filter struct {
 // When inserting more elements, insertion speed will drop significantly and insertions might fail altogether.
 // A capacity of 1000000 is a normal default, which allocates
 // about ~2MB on 64-bit machines.
-func NewFilter(numElements uint) *Filter {
-	numBuckets := getNextPow2(uint64(numElements / bucketSize))
-	if float64(numElements)/float64(numBuckets*bucketSize) > 0.96 {
-		numBuckets <<= 1
+func NewFilter(capacity uint) *Filter {
+	capacity = getNextPow2(uint64(capacity)) / bucketSize
+	if capacity == 0 {
+		capacity = 1
 	}
-	if numBuckets == 0 {
-		numBuckets = 1
-	}
-	buckets := make([]bucket, numBuckets)
+	buckets := make([]bucket, capacity)
 	return &Filter{
 		buckets:         buckets,
 		count:           0,
-		bucketIndexMask: uint(len(buckets) - 1),
+		bucketIndexMask: uint(bits.TrailingZeros(capacity)),
 	}
 }
 
