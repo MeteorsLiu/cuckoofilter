@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	altHash = [maxFingerprint]uint{}
+	altHash = [maxFingerprint + 1]uint{}
 	masks   = [65]uint{}
 
 	rng wyhash.SRNG
@@ -25,7 +25,7 @@ func randi(i1, i2 uint) uint {
 
 func init() {
 	b := make([]byte, 2)
-	for i := 0; i < maxFingerprint; i++ {
+	for i := 0; i < maxFingerprint+1; i++ {
 		binary.LittleEndian.PutUint16(b, uint16(i))
 		altHash[i] = (uint(xxh3.Hash(b)))
 	}
