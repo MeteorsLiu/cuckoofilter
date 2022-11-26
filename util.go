@@ -7,7 +7,12 @@ import (
 	"github.com/zeebo/xxh3"
 )
 
-var rng wyhash.SRNG
+var (
+	altHash = [maxFingerprint]uint{}
+	masks   = [65]uint{}
+
+	rng wyhash.SRNG
+)
 
 // randi returns either i1 or i2 randomly.
 func randi(i1, i2 uint) uint {
@@ -18,28 +23,36 @@ func randi(i1, i2 uint) uint {
 	return i2
 }
 
-func getAltIndex(fp fingerprint, i uint, bucketIndexMask uint) uint {
+func init() {
 	b := make([]byte, 2)
-	binary.LittleEndian.PutUint16(b, uint16(fp))
-	hash := uint(xxh3.Hash(b))
-	return (i ^ hash) & bucketIndexMask
+	for i := 0; i < maxFingerprint; i++ {
+		binary.LittleEndian.PutUint16(b, uint16(i))
+		altHash[i] = (uint(xxh3.Hash(b)))
+	}
+	for i := uint(0); i <= 64; i++ {
+		masks[i] = (1 << i) - 1
+	}
 }
 
-func getFingerprint(hash uint64) fingerprint {
-	// Use most significant bits for fingerprint.
-	shifted := hash >> (64 - fingerprintSizeBits)
-	// Valid fingerprints are in range [1, maxFingerprint], leaving 0 as the special empty state.
-	fp := shifted%(maxFingerprint-1) + 1
-	return fingerprint(fp)
+func getAltIndex(fp fingerprint, i uint, bucketPow uint) uint {
+	mask := masks[bucketPow]
+	hash := altHash[fp] & mask
+	return (i & mask) ^ hash
 }
 
-// getIndexAndFingerprint returns the primary bucket index and fingerprint to be used
-func getIndexAndFingerprint(data []byte, bucketIndexMask uint) (uint, fingerprint) {
+func getFingerprint(hash uint64) uint16 {
+	// Use least significant bits for fingerprint.
+	fp := uint16(hash%maxFingerprint + 1)
+	return fp
+}
+
+// getIndicesAndFingerprint returns the 2 bucket indices and fingerprint to be used
+func getIndexAndFingerprint(data []byte, bucketPow uint) (uint, fingerprint) {
 	hash := xxh3.Hash(data)
-	f := getFingerprint(hash)
-	// Use least significant bits for deriving index.
-	i1 := uint(hash) & bucketIndexMask
-	return i1, f
+	fp := getFingerprint(hash)
+	// Use most significant bits for deriving index.
+	i1 := uint(hash>>32) & masks[bucketPow]
+	return i1, fingerprint(fp)
 }
 
 func getNextPow2(n uint64) uint {
