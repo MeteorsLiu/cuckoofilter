@@ -2,9 +2,7 @@ package cuckoo
 
 import (
 	"bufio"
-	"crypto/rand"
 	"fmt"
-	"io"
 	"math"
 	"math/rand"
 	"os"
@@ -105,18 +103,28 @@ func TestFilter_LookupLarge(t *testing.T) {
 }
 
 func TestFilter_Insert(t *testing.T) {
-	const cap = 10000
-	filter := NewFilter(cap)
+	filter := NewFilter(10000)
+	rng := rand.New(rand.NewSource(int64(42)))
 
-	var hash [32]byte
-
+	hash := make([]byte, 32)
 	for i := 0; i < 100; i++ {
-		io.ReadFull(rand.Reader, hash[:])
-		filter.Insert(hash[:])
+		rng.Read(hash)
+		filter.Insert(hash)
 	}
 
 	if got, want := filter.Count(), uint(100); got != want {
 		t.Errorf("inserting 100 items, Count() = %d, want %d", got, want)
+	}
+}
+
+func BenchmarkFilter_Reset(b *testing.B) {
+	const cap = 10000
+	filter := NewFilter(cap)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		filter.Reset()
 	}
 }
 
@@ -171,48 +179,6 @@ func BenchmarkFilter_Lookup(b *testing.B) {
 	}
 }
 
-/*
-	func BenchmarkFilter_Reset(b *testing.B) {
-		const cap = 10000
-		filter := NewFilter(cap)
-
-		b.ResetTimer()
-
-		for i := 0; i < b.N; i++ {
-			filter.Reset()
-		}
-	}
-
-	func BenchmarkFilter_Insert(b *testing.B) {
-		const cap = 10000
-		filter := NewFilter(cap)
-
-		b.ResetTimer()
-
-		var hash [32]byte
-		for i := 0; i < b.N; i++ {
-			io.ReadFull(rand.Reader, hash[:])
-			filter.Insert(hash[:])
-		}
-	}
-
-	func BenchmarkFilter_Lookup(b *testing.B) {
-		const cap = 10000
-		filter := NewFilter(cap)
-
-		var hash [32]byte
-		for i := 0; i < 10000; i++ {
-			io.ReadFull(rand.Reader, hash[:])
-			filter.Insert(hash[:])
-		}
-
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			io.ReadFull(rand.Reader, hash[:])
-			filter.Lookup(hash[:])
-		}
-	}
-*/
 func TestDelete(t *testing.T) {
 	cf := NewFilter(8)
 	cf.Insert([]byte("one"))
@@ -241,7 +207,9 @@ func TestDelete(t *testing.T) {
 func TestDeleteMultipleSame(t *testing.T) {
 	cf := NewFilter(4)
 	for i := 0; i < 5; i++ {
-		cf.Insert([]byte("some_item"))
+		if !cf.Insert([]byte("some_item")) {
+			t.Error("Failed insert during setup.")
+		}
 	}
 
 	testCases := []struct {
@@ -288,3 +256,46 @@ func TestEncodeDecode(t *testing.T) {
 		t.Errorf("Decode = %v, want %v, encoded = %v", got, cf, encoded)
 	}
 }
+
+/*
+	func BenchmarkFilter_Reset(b *testing.B) {
+		const cap = 10000
+		filter := NewFilter(cap)
+
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			filter.Reset()
+		}
+	}
+
+	func BenchmarkFilter_Insert(b *testing.B) {
+		const cap = 10000
+		filter := NewFilter(cap)
+
+		b.ResetTimer()
+
+		var hash [32]byte
+		for i := 0; i < b.N; i++ {
+			io.ReadFull(rand.Reader, hash[:])
+			filter.Insert(hash[:])
+		}
+	}
+
+	func BenchmarkFilter_Lookup(b *testing.B) {
+		const cap = 10000
+		filter := NewFilter(cap)
+
+		var hash [32]byte
+		for i := 0; i < 10000; i++ {
+			io.ReadFull(rand.Reader, hash[:])
+			filter.Insert(hash[:])
+		}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			io.ReadFull(rand.Reader, hash[:])
+			filter.Lookup(hash[:])
+		}
+	}
+*/
